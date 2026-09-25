@@ -1,0 +1,16 @@
+{
+    "manifest_version": 3,
+    "name": "AI Chat Locker",
+    "version": "1.0",
+    "description": "Protege tus conversaciones de IA con un PIN.",
+    "content_scripts": [
+        {
+        "matches": [
+            "https://chatgpt.com/*", 
+            "https://gemini.google.com/*", 
+            "https://claude.ai/*"
+        ],
+        "js": ["content.js"]
+        }
+    ]
+}
