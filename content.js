@@ -12,7 +12,6 @@ async function hashPIN(pin) {
 }
 
 if (isBlockedSite) {
-    // 1. Consultar la memoria del navegador para ver si ya hay un PIN
     chrome.storage.local.get(['userPin'], function(result) {
         const storedPin = result.userPin;
         crearPantallaBloqueo(storedPin);
@@ -36,9 +35,8 @@ function crearPantallaBloqueo(storedPin) {
     lockScreen.style.alignItems = "center";
     lockScreen.style.fontFamily = "Arial, sans-serif";
 
-    // 2. Definir si estamos en modo "Configuración" o "Desbloqueo"
-    const isSetupMode = !storedPin; // Si storedPin es undefined, estamos en configuración
-    const titleText = isSetupMode ? "⚙️ Configura tu nuevo PIN" : "🔒 Sitio Protegido";
+    const isSetupMode = !storedPin; 
+    const titleText = isSetupMode ? "Configura tu nuevo PIN" : "Sitio Protegido";
     const btnText = isSetupMode ? "Guardar PIN" : "Desbloquear";
 
     const extraOptionsHTML = !isSetupMode ? `
@@ -56,6 +54,7 @@ function crearPantallaBloqueo(storedPin) {
             ${btnText}
         </button>
         <p id="errorMsg" style="color: #ff4d4d; margin-top: 15px; display: none; font-weight: bold;">PIN incorrecto</p>
+        ${extraOptionsHTML}
     `;
 
     document.body.appendChild(lockScreen);
@@ -67,7 +66,6 @@ function crearPantallaBloqueo(storedPin) {
         const errorMsg = document.getElementById("errorMsg");
 
         if (isSetupMode) {
-            // Guardar nuevo PIN
             if (enteredPin.length >= 4) {
                 const hashedNewPin = await hashPIN(enteredPin);
                 chrome.storage.local.set({ 'userPin': hashedNewPin }, function() {
