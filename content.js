@@ -2,6 +2,15 @@ const blockedSites = ["chatgpt.com", "gemini.google.com", "claude.ai", "instagra
 const currentDomain = window.location.hostname;
 const isBlockedSite = blockedSites.some(site => currentDomain.includes(site));
 
+// Función para encriptar el PIN con SHA-256
+async function hashPIN(pin) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(pin);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 if (isBlockedSite) {
     // 1. Consultar la memoria del navegador para ver si ya hay un PIN
     chrome.storage.local.get(['userPin'], function(result) {
@@ -32,6 +41,12 @@ function crearPantallaBloqueo(storedPin) {
     const titleText = isSetupMode ? "⚙️ Configura tu nuevo PIN" : "🔒 Sitio Protegido";
     const btnText = isSetupMode ? "Guardar PIN" : "Desbloquear";
 
+    const extraOptionsHTML = !isSetupMode ? `
+        <div style="margin-top: 25px; display: flex; justify-content: center;">
+            <span id="changePinBtn" style="color: #e5e7eb; cursor: pointer; text-decoration: underline; font-size: 14px;">Cambiar PIN</span>
+        </div>
+    ` : "";
+
     lockScreen.innerHTML = `
         <h2 style="color: white; margin-bottom: 20px;">${titleText}</h2>
         <input type="password" id="pinInput" placeholder="Ingresa tu PIN" 
@@ -46,25 +61,26 @@ function crearPantallaBloqueo(storedPin) {
     document.body.appendChild(lockScreen);
     document.body.style.overflow = "hidden";
 
-    document.getElementById("actionBtn").addEventListener("click", () => {
+    // Lógica principal: Guardar o Desbloquear (Ahora asíncrona por el hash)
+    document.getElementById("actionBtn").addEventListener("click", async () => {
         const enteredPin = document.getElementById("pinInput").value;
         const errorMsg = document.getElementById("errorMsg");
 
         if (isSetupMode) {
             // Guardar nuevo PIN
             if (enteredPin.length >= 4) {
-                chrome.storage.local.set({ 'userPin': enteredPin }, function() {
-                    lockScreen.remove();
-                    document.body.style.overflow = "auto";
-                    alert("✅ PIN guardado en tu navegador. Se te pedirá al recargar la página.");
+                const hashedNewPin = await hashPIN(enteredPin);
+                chrome.storage.local.set({ 'userPin': hashedNewPin }, function() {
+                    alert("PIN guardado de forma segura en tu navegador.");
+                    location.reload();
                 });
             } else {
                 errorMsg.innerText = "El PIN debe tener al menos 4 caracteres";
                 errorMsg.style.display = "block";
             }
         } else {
-            // Validar PIN existente
-            if (enteredPin === storedPin) {
+            const hashedEnteredPin = await hashPIN(enteredPin);
+            if (hashedEnteredPin === storedPin) {
                 lockScreen.remove();
                 document.body.style.overflow = "auto";
             } else {
@@ -74,4 +90,28 @@ function crearPantallaBloqueo(storedPin) {
             }
         }
     });
+
+    // Lógica para Cambiar PIN (Asíncrona)
+    if (!isSetupMode) {
+        document.getElementById("changePinBtn").addEventListener("click", async () => {
+            const current = prompt("Por seguridad, ingresa tu PIN actual:");
+            if (current) {
+                const hashedCurrent = await hashPIN(current);
+                if (hashedCurrent === storedPin) {
+                    const newPin = prompt("Ingresa tu NUEVO PIN (mínimo 4 caracteres):");
+                    if (newPin && newPin.length >= 4) {
+                        const hashedNew = await hashPIN(newPin);
+                        chrome.storage.local.set({ 'userPin': hashedNew }, () => {
+                            alert("PIN actualizado correctamente.");
+                            location.reload();
+                        });
+                    } else {
+                        alert("El PIN debe tener al menos 4 caracteres. Intenta de nuevo.");
+                    }
+                } else {
+                    alert("PIN actual incorrecto.");
+                }
+            }
+        });
+    }
 }
