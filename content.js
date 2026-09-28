@@ -3,7 +3,6 @@ const currentDomain = window.location.hostname;
 const isBlockedSite = blockedSites.some(site => currentDomain.includes(site));
 
 if (isBlockedSite) {
-    // 1. Consultar la memoria del navegador para ver si ya hay un PIN
     chrome.storage.local.get(['userPin'], function(result) {
         const storedPin = result.userPin;
         crearPantallaBloqueo(storedPin);
@@ -27,10 +26,16 @@ function crearPantallaBloqueo(storedPin) {
     lockScreen.style.alignItems = "center";
     lockScreen.style.fontFamily = "Arial, sans-serif";
 
-    // 2. Definir si estamos en modo "Configuración" o "Desbloqueo"
-    const isSetupMode = !storedPin; // Si storedPin es undefined, estamos en configuración
-    const titleText = isSetupMode ? "⚙️ Configura tu nuevo PIN" : "🔒 Sitio Protegido";
+    const isSetupMode = !storedPin; 
+    const titleText = isSetupMode ? "Configura tu nuevo PIN" : "Sitio Protegido";
     const btnText = isSetupMode ? "Guardar PIN" : "Desbloquear";
+
+    // Solo mostramos "Cambiar PIN" si ya hay un PIN configurado
+    const extraOptionsHTML = !isSetupMode ? `
+        <div style="margin-top: 25px; display: flex; justify-content: center;">
+            <span id="changePinBtn" style="color: #e5e7eb; cursor: pointer; text-decoration: underline; font-size: 14px;">Cambiar PIN</span>
+        </div>
+    ` : "";
 
     lockScreen.innerHTML = `
         <h2 style="color: white; margin-bottom: 20px;">${titleText}</h2>
@@ -41,29 +46,28 @@ function crearPantallaBloqueo(storedPin) {
             ${btnText}
         </button>
         <p id="errorMsg" style="color: #ff4d4d; margin-top: 15px; display: none; font-weight: bold;">PIN incorrecto</p>
+        ${extraOptionsHTML}
     `;
 
     document.body.appendChild(lockScreen);
     document.body.style.overflow = "hidden";
 
+    // Lógica principal: Guardar o Desbloquear
     document.getElementById("actionBtn").addEventListener("click", () => {
         const enteredPin = document.getElementById("pinInput").value;
         const errorMsg = document.getElementById("errorMsg");
 
         if (isSetupMode) {
-            // Guardar nuevo PIN
             if (enteredPin.length >= 4) {
                 chrome.storage.local.set({ 'userPin': enteredPin }, function() {
-                    lockScreen.remove();
-                    document.body.style.overflow = "auto";
-                    alert("✅ PIN guardado en tu navegador. Se te pedirá al recargar la página.");
+                    alert("PIN guardado en tu navegador.");
+                    location.reload();
                 });
             } else {
                 errorMsg.innerText = "El PIN debe tener al menos 4 caracteres";
                 errorMsg.style.display = "block";
             }
         } else {
-            // Validar PIN existente
             if (enteredPin === storedPin) {
                 lockScreen.remove();
                 document.body.style.overflow = "auto";
@@ -74,4 +78,24 @@ function crearPantallaBloqueo(storedPin) {
             }
         }
     });
+
+    // Lógica para Cambiar PIN
+    if (!isSetupMode) {
+        document.getElementById("changePinBtn").addEventListener("click", () => {
+            const current = prompt("Por seguridad, ingresa tu PIN actual:");
+            if (current === storedPin) {
+                const newPin = prompt("Ingresa tu NUEVO PIN (mínimo 4 caracteres):");
+                if (newPin && newPin.length >= 4) {
+                    chrome.storage.local.set({ 'userPin': newPin }, () => {
+                        alert("PIN actualizado correctamente.");
+                        location.reload();
+                    });
+                } else {
+                    alert("El PIN debe tener al menos 4 caracteres. Intenta de nuevo.");
+                }
+            } else if (current) {
+                alert("PIN actual incorrecto.");
+            }
+        });
+    }
 }
