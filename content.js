@@ -35,7 +35,7 @@ function crearPantallaBloqueo(storedPin) {
     lockScreen.style.alignItems = "center";
     lockScreen.style.fontFamily = "Arial, sans-serif";
 
-    const isSetupMode = !storedPin; 
+    const isSetupMode = !storedPin;
     const titleText = isSetupMode ? "Configura tu nuevo PIN" : "Sitio Protegido";
     const btnText = isSetupMode ? "Guardar PIN" : "Desbloquear";
 
@@ -47,10 +47,8 @@ function crearPantallaBloqueo(storedPin) {
 
     lockScreen.innerHTML = `
         <h2 style="color: white; margin-bottom: 20px;">${titleText}</h2>
-        <input type="password" id="pinInput" placeholder="Ingresa tu PIN" 
-               style="padding: 12px; font-size: 16px; border-radius: 8px; border: none; outline: none; text-align: center; width: 200px;">
-        <button id="actionBtn" 
-                style="margin-top: 15px; padding: 12px 25px; font-size: 16px; cursor: pointer; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: bold;">
+        <input type="password" id="pinInput" placeholder="Ingresa tu PIN" style="padding: 12px; font-size: 16px; border-radius: 8px; border: none; outline: none; text-align: center; width: 200px;">
+        <button id="actionBtn" style="margin-top: 15px; padding: 12px 25px; font-size: 16px; cursor: pointer; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: bold;">
             ${btnText}
         </button>
         <p id="errorMsg" style="color: #ff4d4d; margin-top: 15px; display: none; font-weight: bold;">PIN incorrecto</p>
@@ -60,9 +58,26 @@ function crearPantallaBloqueo(storedPin) {
     document.body.appendChild(lockScreen);
     document.body.style.overflow = "hidden";
 
-    // Lógica principal: Guardar o Desbloquear (Ahora asíncrona por el hash)
-    document.getElementById("actionBtn").addEventListener("click", async () => {
-        const enteredPin = document.getElementById("pinInput").value;
+    // Auto-focus persistente (Combate la carga dinámica de la IA)
+    const pinInput = document.getElementById("pinInput");
+    pinInput.focus();
+
+    // Obligamos al cursor a quedarse en el input durante los primeros 1.5 segundos
+    // mientras la IA de fondo termina de cargar sus elementos.
+    const mantenerFoco = setInterval(() => {
+        if (document.activeElement !== pinInput) {
+            pinInput.focus();
+        }
+    }, 100);
+
+    // Detenemos el bucle después de 1.5 segundos para no consumir memoria del navegador
+    setTimeout(() => {
+        clearInterval(mantenerFoco);
+    }, 1500);
+
+    // Extraemos la lógica de procesar el PIN a una función interna para reutilizarla
+    async function procesarPIN() {
+        const enteredPin = pinInput.value;
         const errorMsg = document.getElementById("errorMsg");
 
         if (isSetupMode) {
@@ -84,8 +99,18 @@ function crearPantallaBloqueo(storedPin) {
             } else {
                 errorMsg.innerText = "PIN incorrecto";
                 errorMsg.style.display = "block";
-                document.getElementById("pinInput").value = "";
+                pinInput.value = "";
             }
+        }
+    }
+
+    // Evento al hacer click en el botón
+    document.getElementById("actionBtn").addEventListener("click", procesarPIN);
+
+    // Evento para escuchar la tecla Enter en el campo de texto
+    pinInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            procesarPIN();
         }
     });
 
