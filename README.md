@@ -7,6 +7,7 @@ Extensión de navegador que protege con un PIN tus conversaciones de IA y sesion
 ## Funciones
 
 - **Bloqueo desde el inicio:** la página se oculta antes de mostrarse y solo aparece al escribir el PIN.
+- **Todo el sitio o solo algunos chats:** en ChatGPT, Claude y Gemini puedes proteger únicamente los chats que elijas. Instagram siempre se bloquea completo.
 - **Bloqueo por inactividad:** al recargar o tras 1, 5, 10, 15, 30 o 60 minutos. La actividad se comparte entre las pestañas protegidas.
 - **Sin pérdida de texto:** al bloquearse por inactividad no se recarga la página, así que los borradores se conservan.
 - **Detección de respuestas:** si la IA está respondiendo, el bloqueo se pospone y se reintenta cada 5 segundos, hasta un máximo de 10 minutos.
@@ -51,6 +52,14 @@ Desde los ajustes puedes cambiar el tiempo de inactividad y el PIN. Hay tres for
 - Pulsa el icono de AI Chat Locker en la barra del navegador. Si no aparece, abre el menú de extensiones (pieza de puzle) y fíjalo.
 - En la página de extensiones del navegador, abre los detalles de AI Chat Locker y elige **Opciones de la extensión**.
 
+### Bloquear solo algunos chats
+
+1. En los ajustes, elige **Chats elegidos** en "Qué bloquear en las IA".
+2. Abre el chat que quieras proteger, pulsa el icono de la extensión y elige **Proteger este chat**. No pide PIN.
+3. Para quitar la protección, abre los ajustes con tu PIN y pulsa **Quitar**.
+
+Cada chat protegido se vuelve a bloquear al salir de él. Su título se oculta en las listas del sitio y, mientras haya chats protegidos, el buscador del sitio queda bloqueado.
+
 ---
 
 ## Estructura
@@ -67,9 +76,10 @@ ai-chat-locker/
     │   ├── early.css           Oculta la página mientras está bloqueada
     │   ├── lock-screen.js      Pantalla de bloqueo
     │   ├── inactivity.js       Detector de inactividad
+    │   ├── chat-list.js        Oculta títulos y búsquedas
     │   └── main.js             Coordina el bloqueo
     ├── popup/                  Ajustes (popup y pestaña) y "Bloquear ahora"
-    └── shared/                 Configuración, estilos y formulario de PIN
+    └── shared/                 Configuración, sitios, estilos y formulario de PIN
 ```
 
 ---
@@ -81,6 +91,8 @@ ai-chat-locker/
 - La pantalla de bloqueo usa un Shadow DOM cerrado y el sitio no recibe las teclas del PIN.
 
 **Límites:** protege frente a miradas y accesos casuales. Quien pueda usar DevTools, desactivar la extensión o leer los archivos del perfil del navegador puede saltarse el bloqueo. El contenido de los chats no se cifra y el título de la pestaña sigue visible.
+
+**Límites del modo "Chats elegidos":** ocultar títulos y búsquedas depende del diseño de cada sitio y puede dejar de funcionar si este cambia. Un chat nuevo solo se puede proteger después del primer mensaje. El historial del navegador, los enlaces compartidos y la app móvil quedan fuera. De cada chat se guardan el sitio, el identificador y la fecha, nunca el título.
 
 **Si olvidas el PIN:** no se puede recuperar. Quita la extensión y vuelve a instalarla para crear otro.
 
