@@ -117,7 +117,22 @@ ACL.createStyleSheet = function () {
         .acl-option input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
         .acl-option:has(input:checked) { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
         .acl-option:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .acl-delayed { animation: acl-appear 0s 0.5s both; }
+        @keyframes acl-appear { from { visibility: hidden; } to { visibility: visible; } }
+        .acl-note { margin: 12px 0 0; }
+        .acl-section { margin: 0 0 16px; }
+        .acl-subtitle { margin: 0 0 8px; font-size: 14px; line-height: 1.5; font-weight: 500; color: var(--text); }
+        .acl-list { max-height: 152px; margin: 8px 0 0; padding: 0; overflow: auto; list-style: none; }
+        .acl-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-top: 1px solid var(--soft); font-size: 14px; }
+        .acl-row-label { flex: 1; min-width: 0; }
+        .acl-root .acl-link { padding: 2px; border: none; border-radius: 4px; background: none; color: var(--accent); font-size: 14px; text-decoration: underline; }
+        .acl-root .acl-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
         .acl-page { display: flex; min-height: 100vh; margin: 0; padding: 24px; background: var(--page); }
+        .acl-times { grid-template-columns: repeat(4, 1fr); }
+        .acl-times .acl-option:first-of-type { grid-column: span 2; }
+        .acl-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .acl-actions .acl-secondary { margin: 0; }
+        .acl-popup .acl-list { max-height: 112px; }
         .acl-popup { width: 320px; margin: 0; padding: 20px; background: var(--card); }
     `);
     return sheet;
