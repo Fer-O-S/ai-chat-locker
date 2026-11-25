@@ -78,11 +78,13 @@ const PinStore = (() => {
 
     return {
         async status() {
-            const data = await storage.get(["pinRecord", "userPin", "lockout", "inactivityMinutes"]);
+            const data = await storage.get(["pinRecord", "userPin", "lockout", "inactivityMinutes", "lockMode", "protectedChats"]);
             return {
                 ok: true,
                 hasPin: Boolean(data.pinRecord || data.userPin),
                 minutes: ACL.normalizeMinutes(data.inactivityMinutes),
+                mode: ACL.normalizeMode(data.lockMode),
+                chats: data.protectedChats || [],
                 retryAfterMs: remainingWait(data.lockout)
             };
         },
@@ -109,6 +111,32 @@ const PinStore = (() => {
         setMinutes: (pin, minutes) => serialize(async () => {
             const result = await check(pin);
             if (result.ok) await storage.set({ inactivityMinutes: ACL.normalizeMinutes(minutes) });
+            return result;
+        }),
+
+        setMode: (pin, mode) => serialize(async () => {
+            const result = await check(pin);
+            if (result.ok) await storage.set({ lockMode: ACL.normalizeMode(mode) });
+            return result;
+        }),
+
+        // Añadir protección no pide PIN
+        protectChat: (site, id) => serialize(async () => {
+            if (!ACL.isValidChat(site, id)) return { ok: false, reason: "invalid-chat" };
+            const { pinRecord, userPin, protectedChats = [] } = await storage.get(["pinRecord", "userPin", "protectedChats"]);
+            if (!pinRecord && !userPin) return { ok: false, reason: "no-pin" };
+            if (!protectedChats.some(chat => chat.site === site && chat.id === id)) {
+                await storage.set({ protectedChats: [...protectedChats, { site, id, addedAt: Date.now() }] });
+            }
+            return { ok: true };
+        }),
+
+        unprotectChat: (pin, site, id) => serialize(async () => {
+            const result = await check(pin);
+            if (result.ok) {
+                const { protectedChats = [] } = await storage.get("protectedChats");
+                await storage.set({ protectedChats: protectedChats.filter(chat => chat.site !== site || chat.id !== id) });
+            }
             return result;
         })
     };
