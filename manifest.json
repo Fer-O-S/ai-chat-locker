@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "AI Chat Locker",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Protege tus conversaciones de IA con un PIN.",
     "minimum_chrome_version": "111",
     "permissions": [
@@ -46,10 +46,12 @@
             ],
             "js": [
                 "src/shared/config.js",
+                "src/shared/sites.js",
                 "src/shared/styles.js",
                 "src/shared/pin-form.js",
                 "src/content/lock-screen.js",
                 "src/content/inactivity.js",
+                "src/content/chat-list.js",
                 "src/content/main.js"
             ]
         }

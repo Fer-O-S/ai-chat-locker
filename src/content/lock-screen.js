@@ -40,6 +40,8 @@ ACL.createLockScreen = function ({ onUnlock }) {
 
     function render(newMode, titleText, bodyText, formOptions, extra = []) {
         mode = newMode;
+        // En un chat público la carga dura un instante: la tarjeta solo aparece si se alarga
+        card.classList.toggle("acl-delayed", mode === "loading");
         if (form) form.destroy();
         form = formOptions ? ACL.createPinForm(formOptions) : null;
         title.textContent = titleText;
@@ -101,19 +103,28 @@ ACL.createLockScreen = function ({ onUnlock }) {
             });
         },
 
-        renderUnlock(retryAfterMs) {
+        // onLeave: salida hacia el resto del sitio cuando solo está bloqueado un chat
+        renderUnlock({ retryAfterMs, onLeave }) {
+            const extra = [];
+            if (onLeave) {
+                const leave = ACL.el("button", { class: "acl-secondary", type: "button", text: "Salir de este chat" });
+                leave.addEventListener("click", onLeave);
+                extra.push(leave);
+            }
             const settings = ACL.el("button", { class: "acl-secondary", type: "button", text: "Ajustes" });
             settings.addEventListener("click", () => ACL.send({ type: "open-settings" }));
             const help = ACL.el("details", { class: "acl-help" }, [
                 ACL.el("summary", { text: "¿Olvidaste tu PIN?" }),
                 ACL.el("p", { text: "El PIN no se puede recuperar. Para crear otro, quita AI Chat Locker desde la página de extensiones del navegador y vuelve a instalarlo." })
             ]);
-            render("unlock", "Chat protegido", "Escribe tu PIN para continuar.", {
+            extra.push(settings, help);
+            const bodyText = onLeave ? "Este chat necesita tu PIN. Los demás siguen disponibles." : "Escribe tu PIN para continuar.";
+            render("unlock", "Chat protegido", bodyText, {
                 fields: [{ name: "pin", label: "PIN" }],
                 submitLabel: "Desbloquear",
                 submit: values => ACL.send({ type: "verify-pin", pin: values.pin }),
                 onSuccess: onUnlock
-            }, [settings, help]);
+            }, extra);
             if (retryAfterMs > 0) form.wait(retryAfterMs);
         }
     };
