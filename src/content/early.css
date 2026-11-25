@@ -1,0 +1,25 @@
+/* Oculta la página desde el primer momento y mientras esté bloqueada.
+   Con visibility el contenido tampoco se puede enfocar ni seleccionar. */
+html:not([data-ai-chat-locker="unlocked"]) {
+    overflow: hidden !important;
+    background: #eef0f4 !important;
+}
+
+html:not([data-ai-chat-locker="unlocked"]) body,
+html:not([data-ai-chat-locker="unlocked"]) body *,
+html:not([data-ai-chat-locker="unlocked"]) body *::before,
+html:not([data-ai-chat-locker="unlocked"]) body *::after {
+    visibility: hidden !important;
+    transition: none !important;
+}
+
+html:not([data-ai-chat-locker="unlocked"]) body {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    html:not([data-ai-chat-locker="unlocked"]) {
+        background: #101218 !important;
+    }
+}
